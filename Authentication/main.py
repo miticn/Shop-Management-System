@@ -1,12 +1,15 @@
 from flask import Flask;
 from flask import request
+from flask_sqlalchemy import SQLAlchemy
+from models import User;
+from models import database;
 
 from configuration import Configuration;
+
+
 app = Flask (__name__);
-
-
 app.config.from_object (Configuration);
-
+database.init_app ( app )
 
 @app.route ("/register_customer", methods=["POST"])
 def register_customer ( ):
@@ -25,10 +28,13 @@ def register_customer ( ):
         return {"message": "Invalid password."}, 404;
 
     #return 404 if email is already in use
-
+    if User.query.filter_by (email = request.json["email"]).first ( ) != None:
+        return {"message": "Email already exists."}, 404;
 
     #add customer to database
-
+    user = User (forename = request.json["forename"], surname = request.json["surname"], email = request.json["email"], password = request.json["password"], role = "customer");
+    database.session.add (user);
+    database.session.commit ( );
     
     return "",200;
 
