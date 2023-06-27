@@ -1,6 +1,5 @@
 from flask import Flask;
 from flask import request
-from flask_sqlalchemy import SQLAlchemy
 from models import User;
 from models import database;
 
@@ -11,8 +10,7 @@ app = Flask (__name__);
 app.config.from_object (Configuration);
 database.init_app ( app )
 
-@app.route ("/register_customer", methods=["POST"])
-def register_customer ( ):
+def register (role):
     fields = ["forename", "surname", "email", "password"];
     #return 404 if field is missing with message field in json
     for field in fields:
@@ -32,15 +30,19 @@ def register_customer ( ):
         return {"message": "Email already exists."}, 404;
 
     #add customer to database
-    user = User (forename = request.json["forename"], surname = request.json["surname"], email = request.json["email"], password = request.json["password"], role = "customer");
+    user = User (forename = request.json["forename"], surname = request.json["surname"], email = request.json["email"], password = request.json["password"], role = role);
     database.session.add (user);
     database.session.commit ( );
     
     return "",200;
 
+@app.route ("/register_customer", methods=["POST"])
+def register_customer ( ):
+    return register ("customer");
+
 @app.route ("/register_courier", methods=["POST"])
 def register_courier ( ):
-    return "register_courier";
+    return register ("courier");
 
 @app.route ("/login", methods=["POST"])
 def login ( ):
@@ -53,4 +55,4 @@ def delete ( ):
 
 
 if ( __name__ == "__main__" ):
-    app.run ( debug = True )
+    app.run ( host="0.0.0.0", debug = True )
