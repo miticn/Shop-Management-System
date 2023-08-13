@@ -16,19 +16,19 @@ def register (role):
     #return 404 if field is missing with message field in json
     for field in fields:
         if not field in request.json or request.json[field] == "":
-            return {"message": "Field " + field + " is missing"}, 404;
+            return {"message": "Field " + field + " is missing"}, 400;
     
     #return 404 if email is not valid
     if not "@" in request.json["email"] or not "." in request.json["email"]:
-        return {"message": "Invalid email."}, 404;
+        return {"message": "Invalid email."}, 400;
 
     #return 404 if password is not valid
     if len (request.json["password"]) < 8:
-        return {"message": "Invalid password."}, 404;
+        return {"message": "Invalid password."}, 400
 
     #return 404 if email is already in use
     if User.query.filter_by (email = request.json["email"]).first ( ) != None:
-        return {"message": "Email already exists."}, 404;
+        return {"message": "Email already exists."}, 400;
 
     #add customer to database
     user = User (forename = request.json["forename"], surname = request.json["surname"], email = request.json["email"], password = request.json["password"], role = role);
@@ -51,16 +51,16 @@ def login ( ):
     #return 404 if field is missing with message field in json
     for field in fields:
         if not field in request.json or request.json[field] == "":
-            return {"message": "Field " + field + " is missing"}, 404;
+            return {"message": "Field " + field + " is missing"}, 400;
 
     #check if email is valid
     if not "@" in request.json["email"] or not "." in request.json["email"]:
-        return {"message": "Invalid email."}, 404;
+        return {"message": "Invalid email."}, 400;
 
     #check credentials from database
     user = User.query.filter_by (email = request.json["email"], password = request.json["password"]).first ( );
     if user == None:
-        return {"message": "Invalid credentials."}, 404;
+        return {"message": "Invalid credentials."}, 400;
 
     #create token
     claims = {
@@ -75,9 +75,28 @@ def login ( ):
 
 @app.route ("/delete", methods=["POST"])
 def delete ( ):
-    return "delete";
+    #return 404 if field is missing with message field in json
+    if not "Authorization" in request.json or request.json["Authorization"] == "" or request.json["Authorization"].split (" ")[0] != "Bearer":
+        return {"msg": "Missing Authorization Header"}, 401;
+
+    token = request.json["Authorization"].split (" ")[1];
+    
+    #return 404 if token is invalid
+    try:
+        claims = jwt.decode_token (token);
+    except:
+        return {"msg": "Invalid token"}, 401;
+
+    #delete from model
+    user = User.query.filter_by (email = request.json["Authorization"]).first ( );
+    if user == None:
+        return {"message": "Invalid credentials."}, 400;
+    database.session.delete (user);
+    database.session.commit ( );
+    
 
 
-
+    
+    
 if ( __name__ == "__main__" ):
     app.run ( host="0.0.0.0", debug = True )
