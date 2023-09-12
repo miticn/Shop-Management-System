@@ -5,7 +5,7 @@ from models import database;
 
 from configuration import Configuration;
 from flask_jwt_extended import create_access_token
-from flask_jwt_extended import JWTManager
+from flask_jwt_extended import JWTManager, decode_token
 
 app = Flask (__name__);
 app.config.from_object (Configuration);
@@ -37,6 +37,9 @@ def register (role):
     
     return "",200;
 
+def tokenValid(token : str) -> bool:
+    pass
+
 @app.route ("/register_customer", methods=["POST"])
 def register_customer ( ):
     return register ("customer");
@@ -66,7 +69,7 @@ def login ( ):
     claims = {
             "forename": user.forename,
             "surname": user.surname,
-            "roles": user.role
+            "roles": [user.role]
     }
     access_token  = create_access_token ( identity = user.email, additional_claims = claims )
 
@@ -80,19 +83,23 @@ def delete ( ):
         return {"msg": "Missing Authorization Header"}, 401;
 
     token = request.json["Authorization"].split (" ")[1];
-    
+    app.logger.info (token);
     #return 404 if token is invalid
     try:
-        claims = jwt.decode_token (token);
-    except:
-        return {"msg": "Invalid token"}, 401;
+        claims = decode_token (token);
+        app.logger.info (claims);
+    except Exception as e:
+        app.logger.info (str(e));
+        return {"msg": "Missing Authorization Header"}, 401;
 
     #delete from model
-    user = User.query.filter_by (email = request.json["Authorization"]).first ( );
+    user = User.query.filter_by (email = claims['sub']).first ( );
     if user == None:
-        return {"message": "Invalid credentials."}, 400;
+        return {"message": "Unknown user."}, 400;
     database.session.delete (user);
     database.session.commit ( );
+    return "",200;
+
     
 
 
