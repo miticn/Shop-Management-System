@@ -7,7 +7,7 @@ from configuration import Configuration;
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import JWTManager, decode_token
 from email_validator import validate_email, EmailNotValidError
-
+from auth import authentication_required
 app = Flask (__name__);
 app.config.from_object (Configuration);
 database.init_app ( app )
@@ -81,30 +81,18 @@ def login ( ):
     return {"accessToken":access_token},200;
     
 
-@app.route ("/delete", methods=["POST"])
-def delete ( ):
-    if not "Authorization" in request.headers or request.headers["Authorization"] == "" or request.headers["Authorization"].split (" ")[0] != "Bearer":
-        return {"msg": "Missing Authorization Header"}, 401;
+@app.route("/delete", methods=["POST"])
+@authentication_required
+def delete(claims):
+    # Continue with your delete logic
+    user = User.query.filter_by(email=claims['sub']).first()
+    if user is None:
+        return {"message": "Unknown user."}, 400
 
-    token = request.headers["Authorization"].split (" ")[1];
-    app.logger.info (token);
-    #return 404 if token is invalid
-    try:
-        claims = decode_token (token);
-        app.logger.info (claims);
-    except Exception as e:
-        app.logger.info (str(e));
-        return {"msg": "Missing Authorization Header"}, 401;
+    database.session.delete(user)
+    database.session.commit()
 
-    #delete from model
-    user = User.query.filter_by (email = claims['sub']).first ( );
-    if user == None:
-        return {"message": "Unknown user."}, 400;
-    database.session.delete (user);
-    database.session.commit ( );
-    return "",200;
-
-    
+    return "", 200
 
 
     
