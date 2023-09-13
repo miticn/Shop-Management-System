@@ -37,17 +37,23 @@ def update ( claims):
             return {"message": "Incorrect price on line "+str(line_number)+"."}, 400
         
         #check if product already exists
-        product = Category.query.filter_by (name = lines[line_number][1]).first ( );
+        product = Product.query.filter_by(name = lines[line_number][1]).first ( );
         if product != None:
             return {"message": "Product "+lines[line_number][1]+" already exists."}, 400
     
     for line in lines:
         product = Product (name = line[1], price = line[2]);
-        categories = [Category (name = category) for category in line[0].split ( "|" )]
+        categories = [category.strip() for category in line[0].split ( "|" )]
+        print(categories)
         database.session.add (product);
         database.session.commit ( );
-        for category in categories:
-            database.session.add (category);
+        for category_name in categories:
+            category = Category.query.filter_by(name = category_name).first ( );
+            print("Category: ", category)
+            if category == None:
+                category = Category (name = category_name)
+                database.session.add (category);
+            print("Category: ", category.name)
             database.session.commit ( );
             product_category = ProductCategories (product_id = product.id, category_id = category.id);
             database.session.add (product_category);

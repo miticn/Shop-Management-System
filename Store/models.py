@@ -11,6 +11,17 @@ class Product (database.Model):
     name = database.Column (database.String (50), nullable=False);
     price = database.Column (database.Float, nullable=False);
 
+    categories = database.relationship ("Category", secondary="product_categories", back_populates="products");
+
+    #json serialization
+    def to_json (self):
+        return {
+            "categories": [category.name for category in self.categories],
+            "id": self.id,
+            "name": self.name,
+            "price": self.price
+        };
+
 
 class Category (database.Model):
 
@@ -18,6 +29,8 @@ class Category (database.Model):
 
     id = database.Column (database.Integer, primary_key=True, autoincrement=True);
     name = database.Column (database.String (50), nullable=False);
+
+    products = database.relationship ("Product", secondary="product_categories", back_populates="categories");
 
 class ProductCategories (database.Model):
 
