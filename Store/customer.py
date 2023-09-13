@@ -22,21 +22,14 @@ def search ( claims):
     name = request.args.get ( "name" );
     category = request.args.get ( "category" );
 
-    
-    #get products
     products = Product.query;
+    categories = Category.query;
     if name != None:
         products = products.filter(Product.name.contains(name));
+        categories = categories.filter(Category.products.any(Product.name.like(f"%{name}%")))
     if category != None:
         products = products.filter(Product.categories.any(Category.name.like(f"%{category}%")))
-        
-    categories = Category.query;
-    if category != None:
         categories = categories.filter(Category.name.contains(category))
-    if name != None:
-        categories = categories.filter(Category.products.any(Product.name.like(f"%{name}%")))
-    print([product.name for product in products])
-
     
     products = products.all();
     categories = categories.all();
