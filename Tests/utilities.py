@@ -406,6 +406,8 @@ def evaluate_category_statistics_test ( set_up_data, expected_response, received
 def evaluate_transaction_from_latest_block ( address, name, provider_url ):
     web3 = Web3 ( HTTPProvider ( provider_url ) )
     block = web3.eth.get_block ( "latest", True )
+
+    found = False
     for transaction in block.transactions:
         if ( transaction["from"] == address ):
             found = True
