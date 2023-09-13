@@ -6,6 +6,7 @@ from models import database;
 from configuration import Configuration;
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import JWTManager, decode_token
+from email_validator import validate_email, EmailNotValidError
 
 app = Flask (__name__);
 app.config.from_object (Configuration);
@@ -16,10 +17,12 @@ def register (role):
     #return 404 if field is missing with message field in json
     for field in fields:
         if not field in request.json or request.json[field] == "":
-            return {"message": "Field " + field + " is missing"}, 400;
+            return {"message": "Field " + field + " is missing."}, 400;
     
-    #return 404 if email is not valid
-    if not "@" in request.json["email"] or not "." in request.json["email"]:
+    #return 400 if email is not valid
+    try:
+        validate_email (request.json["email"])
+    except EmailNotValidError as e:
         return {"message": "Invalid email."}, 400;
 
     #return 404 if password is not valid
@@ -54,10 +57,12 @@ def login ( ):
     #return 404 if field is missing with message field in json
     for field in fields:
         if not field in request.json or request.json[field] == "":
-            return {"message": "Field " + field + " is missing"}, 400;
+            return {"message": "Field " + field + " is missing."}, 400;
 
     #check if email is valid
-    if not "@" in request.json["email"] or not "." in request.json["email"]:
+    try:
+        validate_email (request.json["email"])
+    except EmailNotValidError as e:
         return {"message": "Invalid email."}, 400;
 
     #check credentials from database
@@ -78,11 +83,10 @@ def login ( ):
 
 @app.route ("/delete", methods=["POST"])
 def delete ( ):
-    #return 404 if field is missing with message field in json
-    if not "Authorization" in request.json or request.json["Authorization"] == "" or request.json["Authorization"].split (" ")[0] != "Bearer":
+    if not "Authorization" in request.headers or request.headers["Authorization"] == "" or request.headers["Authorization"].split (" ")[0] != "Bearer":
         return {"msg": "Missing Authorization Header"}, 401;
 
-    token = request.json["Authorization"].split (" ")[1];
+    token = request.headers["Authorization"].split (" ")[1];
     app.logger.info (token);
     #return 404 if token is invalid
     try:

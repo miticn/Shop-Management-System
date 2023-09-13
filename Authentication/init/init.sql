@@ -9,3 +9,5 @@ create table users (
     password varchar(256) not null,
     role varchar(256) not null
 );
+
+insert into users (forename, surname, email, password, role) values ('Scrooge', 'McDuck', 'onlymoney@gmail.com', 'evenmoremoney', 'owner');
