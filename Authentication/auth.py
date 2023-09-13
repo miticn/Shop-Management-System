@@ -23,3 +23,16 @@ def authentication_required(f):
         return f(*args, **kwargs)
 
     return decorated_function
+
+def owner_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        claims = kwargs['claims']
+        print(claims["roles"])
+        print("owner" not in claims["roles"])
+        if "owner" not in claims["roles"]:
+            return {"msg": "Missing Authorization Header"}, 401
+        kwargs['claims'] = claims
+        return f(*args, **kwargs)
+
+    return decorated_function

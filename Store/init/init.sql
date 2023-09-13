@@ -1,13 +1,24 @@
-create database users;
-use users;
+create database store;
+use store;
 
-create table users (
-    id int primary key auto_increment,
-    forename varchar(256) not null,
-    surname varchar(256) not null,
-    email varchar(256) not null,
-    password varchar(256) not null,
-    role varchar(256) not null
+-- Create products table
+CREATE TABLE products (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    price FLOAT NOT NULL
 );
 
-insert into users (forename, surname, email, password, role) values ('Scrooge', 'McDuck', 'onlymoney@gmail.com', 'evenmoremoney', 'owner');
+-- Create categories table
+CREATE TABLE categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL
+);
+
+-- Create product_categories table
+CREATE TABLE product_categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    category_id INT NOT NULL,
+    FOREIGN KEY (product_id) REFERENCES products(id),
+    FOREIGN KEY (category_id) REFERENCES categories(id)
+);
