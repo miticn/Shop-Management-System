@@ -1,12 +1,13 @@
 from flask import Flask;
 from flask import request
-from models import Product, Category, ProductCategories;
+from models import Product, Category, Order,OrderProducts;
 from models import database;
 
 from configuration import Configuration;
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import JWTManager, decode_token
 from auth import authentication_required, customer_required
+from datetime import datetime
 
 app = Flask (__name__);
 app.config.from_object (Configuration);
@@ -48,6 +49,8 @@ def order ( claims):
         return {"message": "Field requests is missing."}, 400;
     requests = request_data["requests"];
 
+    order_price : float = 0;
+    order_items = [];
     for req_i in range(len(requests)):
         if not "id" in requests[req_i]:
             return {"message": "Product id is missing for request number "+str(req_i)+"."}, 400;
@@ -68,8 +71,21 @@ def order ( claims):
         product = Product.query.filter_by(id = product_id).first ( );
         if product == None:
             return {"message": "Invalid product for request number "+str(req_i)+"."}, 400;
+        order_price += product.price * quantity;
+        order_items.append((product_id, quantity));
 
-    return "", 200;
+    #create order
+    order = Order ( customer_email = claims["sub"], price = order_price, status = "pending", time = datetime.now ( ) );
+    database.session.add ( order );
+    database.session.commit ( );
+    for item in order_items:
+        database.session.add(OrderProducts(order_id = order.id, product_id = item[0], quantity = item[1]));
+    database.session.commit ( );
+    return {"id": order.id}, 200;
+
+
+
+
 
 @app.route ("/status", methods=["GET"])
 @authentication_required
