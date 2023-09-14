@@ -75,7 +75,7 @@ def order ( claims):
         order_items.append((product_id, quantity));
 
     #create order
-    order = Order ( customer_email = claims["sub"], price = order_price, status = "pending", time = datetime.now ( ) );
+    order = Order ( customer_email = claims["sub"], price = order_price, status = "CREATED", timestamp = datetime.now ( ) );
     database.session.add ( order );
     database.session.commit ( );
     for item in order_items:
@@ -91,7 +91,9 @@ def order ( claims):
 @authentication_required
 @customer_required
 def status ( claims):
-    return "", 200;
+    customer_email = claims["sub"];
+    orders = Order.query.filter_by(customer_email = customer_email).all ( );
+    return {"orders": [order.to_json() for order in orders]}, 200;
 
 if ( __name__ == "__main__" ):
     app.run ( host="0.0.0.0", debug = True, port = 5002 )

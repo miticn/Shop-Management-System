@@ -28,7 +28,7 @@ CREATE TABLE orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     customer_email VARCHAR(256) NOT NULL,
     price FLOAT NOT NULL,
-    time DATETIME NOT NULL,
+    timestamp DATETIME NOT NULL,
     status VARCHAR(256) NOT NULL
 );
 
