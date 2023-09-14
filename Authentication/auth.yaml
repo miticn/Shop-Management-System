@@ -11,7 +11,7 @@ services:
   adminer:
     image: adminer
     ports:
-      - 8080:8080
+      - 8001:8080
   auth:
     image: auth:v1
     build:

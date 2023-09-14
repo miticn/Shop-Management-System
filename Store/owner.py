@@ -8,6 +8,9 @@ from flask_jwt_extended import create_access_token
 from flask_jwt_extended import JWTManager, decode_token
 from auth import authentication_required, owner_required
 
+import requests
+from os import environ
+
 app = Flask (__name__);
 app.config.from_object (Configuration);
 database.init_app ( app )
@@ -67,12 +70,14 @@ def update ( claims):
 @app.route ("/product_statistics", methods=["GET"])
 @authentication_required
 def product_statistics ( ):
-    pass
+    response = requests.get(f'http://{environ["SPARK_URL"]}:5004/product_statistics')
+    return response.content, response.status_code
 
 @app.route ("/category_statistics", methods=["GET"])
 @authentication_required
 def category_statistics ( ):
-    pass
+    response = requests.get(f'http://{environ["SPARK_URL"]}:5004/category_statistics')
+    return response.content, response.status_code
 
 if ( __name__ == "__main__" ):
     app.run ( host="0.0.0.0", debug = True, port = 5001 )
