@@ -95,5 +95,32 @@ def status ( claims):
     orders = Order.query.filter_by(customer_email = customer_email).all ( );
     return {"orders": [order.to_json() for order in orders]}, 200;
 
+@app.route ("/delivered", methods=["POST"])
+@authentication_required
+@customer_required
+def delivered ( claims):
+    #get order id
+    request_data = request.get_json ( );
+    if not "id" in request_data:
+        return {"message": "Missing order id."}, 400;
+    try:
+        order_id = int(request_data["id"]);
+    except ValueError:
+        return {"message": "Invalid order id."}, 400;
+    if order_id < 0:
+        return {"message": "Invalid order id."}, 400;
+
+    #get order
+    order = Order.query.filter_by(id = order_id).first ( );
+    if order == None:
+        return {"message": "Invalid order id."}, 400;
+    if order.customer_email != claims["sub"]:
+        return {"message": "Invalid order id."}, 400;
+    if order.status != "PENDING":
+        return {"message": "Invalid order id."}, 400;
+    order.status = "COMPLETE";
+    database.session.commit ( );
+    return "", 200;
+
 if ( __name__ == "__main__" ):
     app.run ( host="0.0.0.0", debug = True, port = 5002 )
