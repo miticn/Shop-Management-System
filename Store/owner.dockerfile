@@ -3,9 +3,11 @@ FROM python:3
 RUN mkdir -p /app
 WORKDIR /app
 
-COPY ./spark-master.py main.py
+COPY ./owner.py main.py
 COPY ./configuration.py configuration.py
-COPY ./requirements-spark.txt requirements.txt
+COPY ./models.py models.py
+COPY ./auth.py auth.py
+COPY ./requirements.txt requirements.txt
 
 RUN pip install -r requirements.txt
 

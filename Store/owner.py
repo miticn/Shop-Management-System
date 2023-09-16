@@ -1,5 +1,5 @@
 from flask import Flask;
-from flask import request
+from flask import request,jsonify
 from models import Product, Category, ProductCategories;
 from models import database;
 
@@ -10,6 +10,14 @@ from auth import authentication_required, owner_required
 
 import requests
 from os import environ
+
+from pyspark.sql import SparkSession
+import pyspark.sql.functions as F
+
+spark = SparkSession.builder \
+    .appName("FlaskSparkApp") \
+    .master("spark://localhost:7077") \
+    .getOrCreate()
 
 app = Flask (__name__);
 app.config.from_object (Configuration);
@@ -70,8 +78,34 @@ def update ( claims):
 @app.route ("/product_statistics", methods=["GET"])
 @authentication_required
 def product_statistics ( ):
-    response = requests.get(f'http://{environ["SPARK_URL"]}:5004/product_statistics')
-    return response.content, response.status_code
+    # Connect to MySQL and fetch data using Spark
+    database_url = "jdbc:mysql://database:33066/store"
+    database_properties = {
+        "user": "root",
+        "password": "root",
+        "driver": "com.mysql.jdbc.Driver"
+    }
+    
+    # Read data from the products and order_products tables
+    products_df = spark.read.jdbc(database_url, "products", properties=database_properties)
+    order_products_df = spark.read.jdbc(database_url, "order_products", properties=database_properties)
+    orders_df = spark.read.jdbc(database_url, "orders", properties=database_properties)
+
+    # Join and aggregate data to get statistics
+    result_df = order_products_df.join(orders_df, "order_id") \
+        .join(products_df, "product_id") \
+        .groupBy("product_id", "name") \
+        .agg(
+            F.sum(F.when(F.col("status") == "delivered", F.col("quantity"))).alias("sold"),
+            F.sum(F.when(F.col("status") != "delivered", F.col("quantity"))).alias("waiting")
+        ) \
+        .filter(F.col("sold") > 0)
+
+    # Convert the Spark DataFrame to a Python list of dictionaries
+    result_list = [row.asDict() for row in result_df.collect()]
+
+    # Return the result as JSON
+    return jsonify(statistics=result_list),200
 
 @app.route ("/category_statistics", methods=["GET"])
 @authentication_required
