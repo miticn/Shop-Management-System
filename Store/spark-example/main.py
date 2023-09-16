@@ -15,9 +15,7 @@ jwt = JWTManager ( app )
 
 
 @app.route ("/product_statistics", methods=["GET"])
-@authentication_required
-@owner_required
-def product_statistics ( claims ):
+def product_statistics ( ):
     spark =  SparkSession.builder.appName("Spark server").master("local[*]").config ("spark.driver.extraClassPath", "mysql-connector-j-8.0.33.jar").getOrCreate()
     # Connect to MySQL and fetch data using Spark
     database_url = "jdbc:mysql://database:3306/store"
@@ -32,29 +30,24 @@ def product_statistics ( claims ):
     order_products_df = spark.read.jdbc(database_url, "order_products", properties=database_properties)
     orders_df = spark.read.jdbc(database_url, "orders", properties=database_properties)
 
-    # Join and aggregate data to get statistics
-    result_df = order_products_df.join(orders_df, order_products_df.order_id == orders_df.id) \
-    .join(products_df, order_products_df.product_id == products_df.id) \
-    .groupBy("product_id", "name") \
-    .agg(
-        F.sum(F.when(F.col("status") == "delivered", F.col("quantity"))).alias("sold"),
-        F.sum(F.when(F.col("status") != "delivered", F.col("quantity"))).alias("waiting")
-    ) \
-    .filter(F.col("sold") > 0)
-
-    # Convert the Spark DataFrame to a Python list of dictionaries
+    result_df = order_products_df \
+        .join(orders_df, order_products_df.order_id == orders_df.id) \
+        .join(products_df, order_products_df.product_id == products_df.id) \
+        .groupBy("name") \
+        .agg(
+            F.coalesce(F.sum(F.when(F.col("status") == "COMPLETE", F.col("quantity"))), F.lit(0)).alias("sold"),
+            F.coalesce(F.sum(F.when(F.col("status") != "COMPLETE", F.col("quantity"))), F.lit(0)).alias("waiting")
+        ) \
+        .filter((F.col("sold") > 0) | (F.col("waiting") > 0))
     result_list = [row.asDict() for row in result_df.collect()]
 
-    # Return the result as JSON
     return jsonify(statistics=result_list), 200
 
 
 
 @app.route ("/category_statistics", methods=["GET"])
-@authentication_required
-@owner_required
 def category_statistics ( ):
     return "", 200
 
 if ( __name__ == "__main__" ):
-    app.run ( host="0.0.0.0", debug = True, port = 5001 )
+    app.run ( host="0.0.0.0", debug = True, port = 5004 )

@@ -25,7 +25,6 @@ services:
     container_name: spark-master
     ports:
       - "8080:8080"
-      - "5004:5004"
       - "7077:7077"
     environment:
       - INIT_DAEMON_STEP=setup_spark
@@ -63,7 +62,7 @@ services:
     environment:
       DOCKER_INSTANCE: 1
     ports:
-      - 5001:5001
+      - 5004:5004
     networks:
       - spark-network
 
