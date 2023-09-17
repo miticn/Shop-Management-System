@@ -22,9 +22,14 @@ contract Order {
         _;
     }
 
-    function pickUpPackage() external{
+    modifier onlyOwner(){
+        require(msg.sender == owner,"Caller of this function must be owner.");
+        _;
+    }
+
+    function pickUpPackage(address _courier) external onlyOwner{
         require(state == State.PAID, "Order must be paid before being picked up.");
-        courier = msg.sender;
+        courier = _courier;
         state = State.PICKED_UP;
     }
 

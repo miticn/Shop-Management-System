@@ -88,7 +88,13 @@
 				"type": "function"
 			},
 			{
-				"inputs": [],
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_courier",
+						"type": "address"
+					}
+				],
 				"name": "pickUpPackage",
 				"outputs": [],
 				"stateMutability": "nonpayable",
@@ -136,11 +142,11 @@
 	},
 	"sources": {
 		"order.sol": {
-			"keccak256": "0x98db86fedae56671a63bc1f21505c09367037fac34991b4a081083ba980a028d",
+			"keccak256": "0x0e2a55cdbcc0c477967df5f424b44c0afe5fbdbbb520be6d23b49c6ca229c502",
 			"license": "GPL-3.0",
 			"urls": [
-				"bzz-raw://00b47516a0a59179cac412dd2c1d5da8db71f7d45264c647bac1a10c07bb8a81",
-				"dweb:/ipfs/QmSTe9QPgj1KNq8nVTGYUEVWAntdg8KttvfWhcfnjpHcX9"
+				"bzz-raw://aafd37ee5f1fe91f46d390eb4e22cb90ff754c550756001318d745ef286f72ea",
+				"dweb:/ipfs/QmVvdjGoUWA1bwuE3DDuoTJF76eyx7Sr8Mpx4SQa3sYMY6"
 			]
 		}
 	},

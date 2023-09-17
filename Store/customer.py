@@ -9,7 +9,7 @@ from flask_jwt_extended import JWTManager, decode_token
 from auth import authentication_required, customer_required
 from datetime import datetime
 from web3 import Web3, HTTPProvider
-
+import json
 app = Flask (__name__);
 app.config.from_object (Configuration);
 database.init_app ( app )
@@ -139,8 +139,116 @@ def delivered ( claims):
         return {"message": "Invalid order id."}, 400;
     if order.status != "PENDING":
         return {"message": "Invalid order id."}, 400;
+
+    #get keys
+    if not "keys" in request_data or request_data["keys"] == "":
+        return {"message": "Missing keys."}, 400;
+
+    if not "passphrase" in request_data or request_data["passphrase"] == "":
+        return {"message": "Missing passphrase."}, 400;
+    #decrypt keys
+    try:
+        keys = json.loads(request_data["keys"].replace("'", "\""));
+        print(keys)
+        costomerAccountPrK = web3.eth.account.decrypt(keys, request_data["passphrase"]);
+        costomerAccount = web3.eth.account.from_key(costomerAccountPrK)
+        print(costomerAccount)
+    except ValueError:
+        print(ValueError)
+        return {"message": "Invalid credentials."}, 400;
+
+    #get contract
+    contract = web3.eth.contract(address = order.contract_address, abi = Configuration.CONTRACT_ABI);
+
+    #check if address is the same
+    if contract.functions.buyer().call() != costomerAccount.address:
+        return {"message": "Invalid customer account."}, 400;
+
+    #check if paid
+    if contract.functions.state().call() < 1:
+        return {"message": "Transfer not complete."}, 400;
+
+    #check if picked up
+    if contract.functions.state().call() < 2:
+        return {"message": "Delivery not complete."}, 400;
+
+
+    transaction = contract.functions.delivered().build_transaction({
+        "from": costomerAccount.address,
+        "nonce": web3.eth.get_transaction_count(costomerAccount.address),
+        "gasPrice": web3.eth.gas_price
+    })
+
+    signed_transaction = web3.eth.account.sign_transaction(transaction, costomerAccountPrK)
+    transaction_hash = web3.eth.send_raw_transaction(signed_transaction.rawTransaction)
+    receipt = web3.eth.wait_for_transaction_receipt(transaction_hash)
+
     order.status = "COMPLETE";
     database.session.commit ( );
+    return "", 200;
+
+@app.route ("/pay", methods=["POST"])
+@authentication_required
+@customer_required
+def pay ( claims):
+    #get order id
+    request_data = request.get_json ( );
+    if not "id" in request_data:
+        return {"message": "Missing order id."}, 400;
+    try:
+        order_id = int(request_data["id"]);
+    except ValueError:
+        return {"message": "Invalid order id."}, 400;
+    if order_id < 0:
+        return {"message": "Invalid order id."}, 400;
+    order = Order.query.filter_by(id = order_id).first ( );
+    if order == None:
+        return {"message": "Invalid order id."}, 400;
+    #get keys
+    if not "keys" in request_data or request_data["keys"] == "":
+        return {"message": "Missing keys."}, 400;
+    
+    if not "passphrase" in request_data or request_data["passphrase"] == "":
+        return {"message": "Missing passphrase."}, 400;
+
+    #decrypt keys
+    
+    try:
+        keys = json.loads(request_data["keys"].replace("'", "\""));
+        print(keys)
+        costomerAccountPrK = web3.eth.account.decrypt(keys, request_data["passphrase"]);
+        costomerAccount = web3.eth.account.from_key(costomerAccountPrK)
+        print(costomerAccount)
+    except ValueError:
+        return {"message": "Invalid credentials."}, 400;
+
+    #get contract
+    contract = web3.eth.contract(address = order.contract_address, abi = Configuration.CONTRACT_ABI);
+
+    #check if funds are enough
+    if web3.eth.get_balance(costomerAccount.address) < contract.functions.cost().call():
+        print(web3.eth.get_balance(costomerAccount.address))
+        print(contract.functions.cost().call())
+        return {"message": "Insufficient funds."}, 400;
+
+    #check if already paid
+    if contract.functions.state().call() != 0:
+        return {"message": "Transfer already complete."}, 400;
+    
+    #pay
+    try:
+        transaction = contract.functions.pay().build_transaction({
+            "from": costomerAccount.address,
+            "nonce": web3.eth.get_transaction_count(costomerAccount.address),
+            "gasPrice": web3.eth.gas_price,
+            "value": contract.functions.cost().call()
+        })
+        signed_transaction = web3.eth.account.sign_transaction(transaction, costomerAccountPrK)
+        transaction_hash = web3.eth.send_raw_transaction(signed_transaction.rawTransaction)
+        receipt = web3.eth.wait_for_transaction_receipt(transaction_hash)
+    except ValueError:
+        return {"message": "Insufficient funds."}, 400;
+
     return "", 200;
 
 if ( __name__ == "__main__" ):

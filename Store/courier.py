@@ -7,12 +7,13 @@ from configuration import Configuration;
 from flask_jwt_extended import JWTManager
 from auth import authentication_required, courier_required
 from datetime import datetime
+from web3 import Web3, HTTPProvider
 
 app = Flask (__name__);
 app.config.from_object (Configuration);
 database.init_app ( app )
 jwt = JWTManager ( app )
-
+web3 = Web3(HTTPProvider("http://localhost:8545"))
 
 @app.route ("/orders_to_deliver", methods=["GET"])
 @authentication_required
@@ -50,9 +51,26 @@ def pick_up_order ( claims):
     if order.status != "CREATED":
         return {"message": "Invalid order id."}, 400;
 
+    if "address" not in request_data or request_data["address"] == "":
+        return {"message": "Missing address."}, 400;
+
+    #eth address validation
+    if not web3.is_address(request_data["address"]):
+        return {"message": "Invalid address."}, 400;
+
+    #contract from order
+    contract = web3.eth.contract(address=order.contract_address, abi=Configuration.CONTRACT_ABI);
+    #check contract status
+    if contract.functions.state().call() != 1:
+        return {"message": "Transfer not complete."}, 400;
     #update order
     order.status = "PENDING";
     database.session.commit();
+
+    #pick up order
+    owner_account = web3.eth.account.from_key(Configuration.OWNER_PRIVATE_KEY);
+
+    contract.functions.pickUpPackage(request_data["address"]).transact({"from":owner_account.address});
     return "", 200;
 
 
