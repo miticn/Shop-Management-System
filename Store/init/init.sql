@@ -29,7 +29,8 @@ CREATE TABLE orders (
     customer_email VARCHAR(256) NOT NULL,
     price FLOAT NOT NULL,
     timestamp DATETIME NOT NULL,
-    status VARCHAR(256) NOT NULL
+    status VARCHAR(256) NOT NULL,
+    contract_address VARCHAR(256) NOT NULL
 );
 
 -- Create the order_products table

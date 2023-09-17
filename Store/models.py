@@ -53,6 +53,7 @@ class Order (database.Model):
     price = database.Column (database.Float, nullable=False);
     timestamp = database.Column (database.DateTime, nullable=False);
     status = database.Column (database.String (256), nullable=False);
+    contract_address = database.Column (database.String (256), nullable=False);
 
     products = database.relationship("Product", secondary="order_products", back_populates="orders", overlaps="order_products");
 

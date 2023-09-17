@@ -8,12 +8,13 @@ from flask_jwt_extended import create_access_token
 from flask_jwt_extended import JWTManager, decode_token
 from auth import authentication_required, customer_required
 from datetime import datetime
+from web3 import Web3, HTTPProvider
 
 app = Flask (__name__);
 app.config.from_object (Configuration);
 database.init_app ( app )
 jwt = JWTManager ( app )
-
+web3 = Web3(HTTPProvider("http://localhost:8545"))
 
 @app.route ("/search", methods=["GET"])
 @authentication_required
@@ -73,9 +74,29 @@ def order ( claims):
             return {"message": "Invalid product for request number "+str(req_i)+"."}, 400;
         order_price += product.price * quantity;
         order_items.append((product_id, quantity));
+    
+    if "address" not in request_data:
+        return {"message": "Field address is missing."}, 400;
+    if request_data["address"] == "":
+        return {"message": "Field address is missing."}, 400;
+    
+    if not web3.is_address(request_data["address"]):
+        return {"message": "Invalid address."}, 400;
+    
+    #create contract
+    owner_account = web3.eth.account.from_key(Configuration.OWNER_PRIVATE_KEY);
+    contract = web3.eth.contract(abi = Configuration.CONTRACT_ABI, bytecode = Configuration.CONTRACT_BYTECODE);
+    tx_hash = contract.constructor(request_data["address"],int(order_price)).transact(
+        {
+            "from": owner_account.address
+        }
+    );
+    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash);
+    contract_address = tx_receipt.contractAddress;
+    
 
     #create order
-    order = Order ( customer_email = claims["sub"], price = order_price, status = "CREATED", timestamp = datetime.now ( ) );
+    order = Order ( customer_email = claims["sub"], price = order_price, status = "CREATED", timestamp = datetime.now ( ), contract_address = contract_address );
     database.session.add ( order );
     database.session.commit ( );
     for item in order_items:

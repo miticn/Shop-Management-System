@@ -75,6 +75,16 @@ services:
       - 5004:5004
     networks:
       - spark-network
+  
+  #Blockchain
+  ganache-cli:
+    image: trufflesuite/ganache-cli
+    ports:
+      - 8545:8545
+    networks:
+      - store-network
+    command: 
+      - "--account=0xb64be88dd6b89facf295f4fd0dda082efcbe95a2bb4478f5ee582b7efe88cf60, 100000000000000000000"
 
 networks:
   spark-network:

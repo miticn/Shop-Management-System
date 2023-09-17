@@ -1,4 +1,4 @@
-#!/home/ticmi/Desktop/IEP/.venv/bin/python
+#!/home/ticmi/Desktop/Projects/IEP/.venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
