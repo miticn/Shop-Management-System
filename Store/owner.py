@@ -1,15 +1,11 @@
 from flask import Flask;
-from flask import request,jsonify
+from flask import request
 from models import Product, Category, ProductCategories;
 from models import database;
 
 from configuration import Configuration;
-from flask_jwt_extended import create_access_token
-from flask_jwt_extended import JWTManager, decode_token
+from flask_jwt_extended import JWTManager
 from auth import authentication_required, owner_required
-
-import requests
-from os import environ
 
 import requests
 
@@ -73,14 +69,14 @@ def update ( claims):
 @authentication_required
 @owner_required
 def product_statistics ( claims ):
-    response = requests.get(f'http://localhost:5004/product_statistics')
+    response = requests.get(f'http://{Configuration.SPARK_APP_URL}:5004/product_statistics')
     return response.content, response.status_code
 
 @app.route ("/category_statistics", methods=["GET"])
 @authentication_required
 @owner_required
 def category_statistics ( claims ):
-    response = requests.get(f'http://localhost:5004/category_statistics')
+    response = requests.get(f'http://{Configuration.SPARK_APP_URL}:5004/category_statistics')
     return response.content, response.status_code
 
 if ( __name__ == "__main__" ):

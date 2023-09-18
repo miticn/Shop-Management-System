@@ -13,7 +13,7 @@ app = Flask (__name__);
 app.config.from_object (Configuration);
 jwt = JWTManager ( app )
 # Connect to MySQL and fetch data using Spark
-database_url = "jdbc:mysql://database:3306/store"
+database_url = f"jdbc:mysql://{Configuration.DATABASE_URL}:3306/store"
 database_properties = {
     "user": "root",
     "password": "root",

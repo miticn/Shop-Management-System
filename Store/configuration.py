@@ -5,15 +5,19 @@ class Configuration:
     #127.0.0.1
     #CHECK ENVIRONMENT VARIABLES
     if "DOCKER_INSTANCE" in environ:
-        DATABASE_URL = "database"
+        DATABASE_URL = "database_store"
+        SPARK_APP_URL = "spark-app"
+        WEB3_PROVIDER_URI = "http://ganache-cli:8545"
     else:
+        WEB3_PROVIDER_URI = "http://127.0.0.1:8545"
         DATABASE_URL = "127.0.0.1"
+        SPARK_APP_URL = "127.0.0.1"
     if "SPARK_INSTANCE" in environ:
         SPARK_URL = "spark-master"
     else:
         SPARK_URL = "127.0.0.1"
 
-    SQLALCHEMY_DATABASE_URI   = f"mysql://root:root@{DATABASE_URL}:33066/store"
+    SQLALCHEMY_DATABASE_URI   = f"mysql://root:root@{DATABASE_URL}:3306/store"
     SPARK_MASTER_URI          = f"spark://{SPARK_URL}:7077"
     JWT_SECRET_KEY            = "JWT_SECRET_DEV_KEY"
     OWNER_PRIVATE_KEY         = "0xb64be88dd6b89facf295f4fd0dda082efcbe95a2bb4478f5ee582b7efe88cf60"

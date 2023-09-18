@@ -1,6 +1,6 @@
 version: "3"
 services:
-  database:
+  database_store:
     image: mysql
     environment:
       - MYSQL_ROOT_PASSWORD=root
@@ -75,6 +75,9 @@ services:
       - 5004:5004
     networks:
       - spark-network
+    depends_on:
+      - spark-master
+      - database_store
   
   #Blockchain
   ganache-cli:
@@ -85,7 +88,52 @@ services:
       - store-network
     command: 
       - "--account=0xb64be88dd6b89facf295f4fd0dda082efcbe95a2bb4478f5ee582b7efe88cf60, 100000000000000000000"
-
+  
+  #Web services
+  owner:
+    image: owner:v1
+    build:
+      context: .
+      dockerfile: owner.dockerfile
+    environment:
+      DOCKER_INSTANCE: 1
+    ports:
+      - 5001:5001
+    depends_on:
+      - spark-app
+      - database_store
+      - ganache-cli
+    networks:
+      - store-network
+      - spark-network
+  customer:
+    image: customer:v1
+    build:
+      context: .
+      dockerfile: customer.dockerfile
+    environment:
+      DOCKER_INSTANCE: 1
+    ports:
+      - 5002:5002
+    depends_on:
+      - database_store
+      - ganache-cli
+    networks:
+      - store-network
+  courier:
+    image: courier:v1
+    build:
+      context: .
+      dockerfile: courier.dockerfile
+    environment:
+      DOCKER_INSTANCE: 1
+    ports:
+      - 5003:5003
+    depends_on:
+      - database_store
+      - ganache-cli
+    networks:
+      - store-network
 networks:
   spark-network:
   store-network:

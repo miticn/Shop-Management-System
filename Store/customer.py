@@ -4,8 +4,7 @@ from models import Product, Category, Order,OrderProducts;
 from models import database;
 
 from configuration import Configuration;
-from flask_jwt_extended import create_access_token
-from flask_jwt_extended import JWTManager, decode_token
+from flask_jwt_extended import JWTManager
 from auth import authentication_required, customer_required
 from datetime import datetime
 from web3 import Web3, HTTPProvider
@@ -14,7 +13,7 @@ app = Flask (__name__);
 app.config.from_object (Configuration);
 database.init_app ( app )
 jwt = JWTManager ( app )
-web3 = Web3(HTTPProvider("http://localhost:8545"))
+web3 = Web3(HTTPProvider(f"{Configuration.WEB3_PROVIDER_URI}"))
 
 @app.route ("/search", methods=["GET"])
 @authentication_required
