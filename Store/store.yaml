@@ -4,8 +4,6 @@ services:
     image: mysql
     environment:
       - MYSQL_ROOT_PASSWORD=root
-    ports:
-      - 33066:3306
     volumes:
       - ./init:/docker-entrypoint-initdb.d
     networks:
